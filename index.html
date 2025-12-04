@@ -16,6 +16,7 @@
             --accent-color: #FFE66D;
             --dark-color: #2C3E50;
             --bg-color: #F7F9FC;
+            --decrypt-color: #1DD1A1; /* Yeni Çözme rengi */
         }
 
         body {
@@ -189,7 +190,7 @@
             margin-top: 10px;
         }
         
-        /* Yeni Şifrele butonu stili */
+        /* Şifreleme butonu stili */
         .encrypt-button {
             background-color: #54A0FF; /* Mavi tonu */
             margin-top: 15px;
@@ -197,6 +198,16 @@
         }
         .encrypt-button:hover {
             background-color: #4088ff;
+        }
+
+        /* Şifre Çözme butonu stili */
+        .decrypt-button {
+            background-color: var(--decrypt-color); /* Yeşil tonu */
+            margin-top: 15px;
+            width: 100%;
+        }
+        .decrypt-button:hover {
+            background-color: #17b38d;
         }
 
         /* Input ve Çıktı alanları */
@@ -357,6 +368,28 @@
                 <div class="output-box" id="cipherOutput">
                     Şifreli metin burada görünecek.
                 </div>
+
+                <!-- YENİ ŞİFRE ÇÖZME BÖLÜMÜ -->
+                <hr style="border: 0; border-top: 1px solid #ccc; margin: 30px 0 20px 0;">
+                
+                <h3>Metin Şifre Çözücü 🔓</h3>
+
+                <div class="input-group">
+                    <label for="inputCipherText">Çözülecek Şifreli Metin:</label>
+                    <input type="text" id="inputCipherText" placeholder="Örn: ŞİFRELİ METNİNİZ">
+                </div>
+
+                <div class="input-group">
+                    <label for="inputDecryptKey">Anahtar Değeri (0-28):</label>
+                    <input type="number" id="inputDecryptKey" min="0" max="28" value="3" placeholder="Örn: 3">
+                </div>
+
+                <button class="decrypt-button" onclick="manualDecrypt()">Şifreyi Çöz</button>
+                
+                <!-- Çözülmüş Sonuç Alanı -->
+                <div class="output-box" id="plainOutput" style="color: var(--decrypt-color);">
+                    Çözülmüş metin burada görünecek.
+                </div>
             </div>
         </div>
 
@@ -411,38 +444,40 @@
         const innerCircle = document.getElementById('innerCircle');
         const matchExample = document.getElementById('matchExample');
         const keyValueDisplay = document.getElementById('keyValue');
-        const cipherOutput = document.getElementById('cipherOutput'); // Yeni çıktı alanı
+        const cipherOutput = document.getElementById('cipherOutput'); // Şifreli çıktı alanı
+        const plainOutput = document.getElementById('plainOutput');   // Şifre çözülmüş çıktı alanı
         
         let currentRotation = 0; // Dilim sayısı cinsinden rotasyon (Anahtar Değeri)
         const totalSlices = 29;
         const anglePerSlice = 360 / totalSlices;
 
         /**
-         * Verilen karakteri Sezar Şifresi ile şifreler (Türkçe Alfabeye göre)
+         * Verilen karakteri Sezar Şifresi ile şifreler (key pozitif) veya çözer (key negatif).
          * @param {string} char 
          * @param {number} key 
-         * @returns {string} Şifrelenmiş karakter
+         * @returns {string} Şifrelenmiş/Çözülmüş karakter
          */
-        function caesarEncrypt(char, key) {
+        function caesarProcess(char, key) {
             const upperChar = char.toUpperCase();
             const index = turkishAlphabet.indexOf(upperChar);
             if (index === -1) {
                 return char; // Türkçe olmayan veya harf olmayan karakterleri koru
             }
             
-            // Sezar şifreleme formülü: (index + key) mod 29
+            // Sezar şifreleme/çözme formülü: (index + key) mod 29
             const newIndex = (index + key) % totalSlices;
+            
             // Negatif sayılar için düzeltme (Örn: key -1 ise)
             const correctedIndex = (newIndex + totalSlices) % totalSlices;
             
             // Büyük/küçük harf duyarlılığını koru
-            const cipheredChar = turkishAlphabet[correctedIndex];
+            const resultChar = turkishAlphabet[correctedIndex];
             
-            // Orijinal karakter küçük harf ise, şifreli karakteri de küçük harf yap
+            // Orijinal karakter küçük harf ise, sonucu da küçük harf yap
             if (char === upperChar) {
-                return cipheredChar;
+                return resultChar;
             } else {
-                return cipheredChar.toLowerCase();
+                return resultChar.toLowerCase();
             }
         }
 
@@ -531,14 +566,56 @@
             currentRotation = key;
             updateWheelUI(key);
 
-            // Metni şifrele
-            const cipherText = Array.from(plainText).map(char => caesarEncrypt(char, key)).join('');
+            // Metni şifrele (key pozitif)
+            const cipherText = Array.from(plainText).map(char => caesarProcess(char, key)).join('');
 
             // Çıktıyı göster
             cipherOutput.innerHTML = `
                 <span style="font-size: 0.8em; color: #fff;">ŞİFRELİ METİN (ANAHTAR: ${key}):</span><br>
                 ${cipherText}
             `;
+            
+            // Şifre çözme çıktısını temizle
+            plainOutput.innerHTML = 'Çözülmüş metin burada görünecek.';
+        }
+
+        /**
+         * Kullanıcının girdiği şifreli metni ve anahtarı kullanarak şifreyi çözer.
+         */
+        function manualDecrypt() {
+            const cipherText = document.getElementById('inputCipherText').value.trim();
+            let key = parseInt(document.getElementById('inputDecryptKey').value);
+            
+            if (!cipherText) {
+                plainOutput.innerHTML = `<span style="color: var(--accent-color);">Lütfen çözülecek şifreli bir metin girin.</span>`;
+                return;
+            }
+
+            // Anahtarın geçerliliğini kontrol et ve varsayılan değer ata
+            if (isNaN(key) || key < 0 || key > totalSlices - 1) {
+                key = 3; // Geçersizse varsayılan 3 kullan
+                document.getElementById('inputDecryptKey').value = key;
+            }
+            
+            // Şifre çözme, şifrelemenin tersidir, bu yüzden anahtar değeri negatif kullanılır.
+            const decryptKey = -key;
+
+            // Anahtarı çarkın görsel dönüşüne yansıt (kullanıcının görmesi için)
+            // Bu, kullanıcı şifre çözerken bile çarkın o anahtara dönmesini sağlar.
+            currentRotation = key; 
+            updateWheelUI(key);
+
+            // Metni çöz (key negatif)
+            const plainText = Array.from(cipherText).map(char => caesarProcess(char, decryptKey)).join('');
+
+            // Çıktıyı göster
+            plainOutput.innerHTML = `
+                <span style="font-size: 0.8em; color: var(--decrypt-color);">ÇÖZÜLEN METİN (ANAHTAR: ${key}):</span><br>
+                ${plainText}
+            `;
+
+            // Şifreleme çıktısını temizle
+            cipherOutput.innerHTML = 'Şifreli metin burada görünecek.';
         }
 
 
