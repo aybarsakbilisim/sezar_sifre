@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sezar Şifreleme Çarkı - Eğitim Materyali</title>
+    <!-- Gerekli PDF Kütüphaneleri -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
+
+        :root {
+            --primary-color: #FF6B6B;
+            --secondary-color: #4ECDC4;
+            --accent-color: #FFE66D;
+            --dark-color: #2C3E50;
+            --bg-color: #F7F9FC;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif; /* Çocuk dostu yuvarlak font */
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--dark-color);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 40px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* --- ÇARK ALANI --- */
+        .wheel-section {
+            flex: 1;
+            min-width: 350px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 20px 0;
+        }
+
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Dış Daire */
+        .outer-circle {
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(
+                #FF9F43 0deg 12.41deg, #FECA57 12.41deg 24.82deg, 
+                #FF6B6B 24.82deg 37.23deg, #FF9FF3 37.23deg 49.64deg, 
+                #54A0FF 49.64deg 62.05deg, #5F27CD 62.05deg 74.46deg,
+                #48DBFB 74.46deg 86.87deg, #1DD1A1 86.87deg 99.28deg,
+                #FF9F43 99.28deg 111.69deg, #FECA57 111.69deg 124.1deg,
+                #FF6B6B 124.1deg 136.51deg, #FF9FF3 136.51deg 148.92deg,
+                #54A0FF 148.92deg 161.33deg, #5F27CD 161.33deg 173.74deg,
+                #48DBFB 173.74deg 186.15deg, #1DD1A1 186.15deg 198.56deg,
+                #FF9F43 198.56deg 210.97deg, #FECA57 210.97deg 223.38deg,
+                #FF6B6B 223.38deg 235.79deg, #FF9FF3 235.79deg 248.2deg,
+                #54A0FF 248.2deg 260.61deg, #5F27CD 260.61deg 273.02deg,
+                #48DBFB 273.02deg 285.43deg, #1DD1A1 285.43deg 297.84deg,
+                #FF9F43 297.84deg 310.25deg, #FECA57 310.25deg 322.66deg,
+                #FF6B6B 322.66deg 335.07deg, #FF9FF3 335.07deg 347.48deg,
+                #54A0FF 347.48deg 360deg
+            );
+            z-index: 1;
+        }
+        
+        /* İç Daire */
+        .inner-circle {
+            width: 70%;
+            height: 70%;
+            top: 15%; 
+            left: 15%;
+            background: #fff;
+            border: 5px solid var(--dark-color);
+            z-index: 2;
+        }
+
+        /* Merkez Noktası */
+        .center-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: var(--dark-color); /* Koyu renkli bir nokta */
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            z-index: 3; /* Çarklardan üstte olmalı */
+        }
+
+        .letter {
+            position: absolute;
+            font-weight: bold;
+            font-size: 14px;
+            
+            /* Harfleri dairenin merkezinde başlat ve kendi boyutuna göre ortala */
+            width: 20px; 
+            height: 20px; 
+            top: 50%; 
+            left: 50%; 
+            margin-left: -10px; 
+            margin-top: -10px; 
+        }
+
+        .outer-circle .letter {
+            color: #fff;
+            text-shadow: 1px 1px 0 #000;
+            font-size: 16px;
+        }
+
+        .inner-circle .letter {
+            color: var(--dark-color);
+            font-size: 14px;
+        }
+
+        /* --- KONTROL PANELI --- */
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            text-align: center;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .key-display {
+            font-size: 1.5rem;
+            margin: 10px 0;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        button {
+            background: var(--secondary-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: white;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 5px; /* Buton aralıklarını artırdım */
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            background: #3ebcb3;
+        }
+
+        button.reset {
+            background: var(--primary-color);
+            margin-top: 10px;
+        }
+        
+        /* PDF Butonu Stili */
+        .pdf-button {
+            background: #3498DB; /* Mavi ton */
+            margin-top: 15px;
+            width: 100%;
+        }
+        .pdf-button:hover {
+            background: #2980B9;
+        }
+        
+        .gemini-feature-button {
+            background-color: #7209B7; /* Mor renk */
+            margin-top: 15px;
+            font-size: 1rem;
+        }
+        .gemini-feature-button:hover {
+            background-color: #9220D7;
+        }
+
+
+        /* --- IKONOGRAF (SAĞ TARAF) */
+        .guide-section {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .step-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-left: 5px solid var(--secondary-color);
+            transition: transform 0.3s;
+        }
+
+        .step-card:hover {
+            transform: translateX(10px);
+        }
+
+        .step-icon {
+            font-size: 3rem;
+            background: #f0f0f0;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            margin: 0 0 5px 0;
+            color: var(--dark-color);
+        }
+
+        .step-content p {
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            color: #666;
+        }
+
+        /* --- ÖRNEK PANELİ VE YENİ ÖZELLİKLER --- */
+        .example-box, .llm-output-box {
+            background: var(--dark-color);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        
+        .llm-output-box {
+            background: #5F27CD; /* Morun daha koyusu */
+            font-size: 1rem;
+            text-align: left;
+            padding: 15px;
+            min-height: 50px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .loading-text {
+            color: var(--accent-color);
+            font-size: 0.9em;
+        }
+
+        .input-group {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            align-items: stretch;
+        }
+        
+        .input-group input {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-family: inherit;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>🕵️‍♂️ Sezar Şifreleme Çarkı</h1>
+    <p style="text-align: center; max-width: 600px;">İçerideki çarkı çevir, harfleri eşleştir ve gizli mesajını oluştur.</p>
+
+    <div class="container" id="mainContainer">
+        
+        <!-- SOL TARAF: ÇARK VE KONTROLLER -->
+        <div class="wheel-section">
+            <div class="wheel-container">
+                <!-- Dış Daire -->
+                <div class="circle outer-circle" id="outerCircle">
+                    <!-- Harfler JS ile eklenecek -->
+                </div>
+                <!-- İç Daire -->
+                <div class="circle inner-circle" id="innerCircle">
+                    <!-- Harfler JS ile eklenecek -->
+                </div>
+                <!-- Merkez Noktası -->
+                <div class="center-dot"></div>
+            </div>
+
+            <div class="controls">
+                <!-- Çark Kontrolleri -->
+                <div class="key-display">Anahtar Değeri: <span id="keyValue">0</span></div>
+                <button onclick="changeKey(-1)">⬅️ Sola Çevir</button>
+                <button onclick="changeKey(1)">Sağa Çevir ➡️</button>
+                <button class="reset" onclick="resetWheel()">Sıfırla (A=A)</button>
+                
+                <!-- PDF Oluşturma Butonu -->
+                <button class="pdf-button" onclick="generatePDF()">PDF Olarak Kaydet 📄</button>
+                
+                <div class="example-box">
+                    <span style="color:#aaa; font-size: 0.8em">Örnek Eşleşme:</span><br>
+                    DIŞ 'A' = İÇ '<span id="matchExample">A</span>'
+                </div>
+
+                <!-- GEMINI API İLE OLUŞTURULMUŞ YENİ ÖZELLİKLER -->
+                <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
+                
+                <h3>Gizli Görev Merkezi ✨</h3>
+
+                <!-- 1. Şifre Oluşturucu -->
+                <div class="input-group">
+                    <input type="text" id="plainTextInput" placeholder="Şifrelenecek kelimeyi girin (Örn: MERHABA)">
+                    <button class="gemini-feature-button" onclick="generateCipher()">✨ Rastgele Şifre Oluştur</button>
+                </div>
+                
+                <!-- 2. Kırıcı Bot -->
+                <div class="input-group">
+                    <input type="text" id="cipherTextInput" placeholder="Şifreli metni girin (Örn: ÇMJGCÇG)">
+                    <button class="gemini-feature-button" onclick="analyzeCipher()">✨ Kırıcı Bot (Analiz)</button>
+                </div>
+
+                <!-- Sonuç Alanı -->
+                <div class="llm-output-box" id="llmOutput">
+                    Sonuçlar burada görünecek.
+                </div>
+            </div>
+        </div>
+
+        <!-- SAĞ TARAF: İKONOGRAF / AÇIKLAMA -->
+        <div class="guide-section">
+            <h2>Nasıl Çalışır?</h2>
+            
+            <div class="step-card">
+                <div class="step-icon">🎯</div>
+                <div class="step-content">
+                    <h3>1. Adım: Hizala</h3>
+                    <p>Çarkı sıfırla. Hem dıştaki hem içteki <strong>'A'</strong> harfinin tam üst üste geldiğinden emin ol.</p>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-icon">🔄</div>
+                <div class="step-content">
+                    <h3>2. Adım: Anahtarı Seç</h3>
+                    <p>İç çarkı <strong>Saat Yönünde</strong> (sağa doğru) çevir. Örneğin anahtarı <strong>3</strong> yaparsan, çark 3 adım döner.</p>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-icon">📝</div>
+                <div class="step-content">
+                    <h3>3. Adım: Eşleştir</h3>
+                    <p>Mesajındaki harfi <strong>Dış Dairede</strong> bul, tam altına gelen <strong>İç Dairedeki</strong> harfi not et. İşte şifre bu!</p>
+                </div>
+            </div>
+
+            <div class="step-card" style="border-left-color: var(--primary-color);">
+                <div class="step-icon">💡</div>
+                <div class="step-content">
+                    <h3>İpucu:</h3>
+                    <p>Şifreyi çözmek için işlemi tersten yap! Şifreli harfi içerde bul, dıştaki karşılığına bak.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration (API key is provided by the runtime environment)
+        const API_KEY = ""; 
+        const API_URL_BASE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+        
+        // Türkçe alfabenin 29 harfi
+        const turkishAlphabet = [
+            "A", "B", "C", "Ç", "D", "E", "F", "G", "Ğ", "H", "I", "İ", "J", "K", "L", 
+            "M", "N", "O", "Ö", "P", "R", "S", "Ş", "T", "U", "Ü", "V", "Y", "Z"
+        ];
+        
+        const outerCircle = document.getElementById('outerCircle');
+        const innerCircle = document.getElementById('innerCircle');
+        const matchExample = document.getElementById('matchExample');
+        const keyValueDisplay = document.getElementById('keyValue');
+        const llmOutput = document.getElementById('llmOutput');
+        
+        let currentRotation = 0; // Dilim sayısı cinsinden rotasyon (Anahtar Değeri)
+        const totalSlices = 29;
+        const anglePerSlice = 360 / totalSlices;
+        let originalLlmOutputText = llmOutput.innerText; // Başlangıç metnini tut
+
+        /**
+         * Verilen karakteri Sezar Şifresi ile şifreler (Türkçe Alfabeye göre)
+         * @param {string} char 
+         * @param {number} key 
+         * @returns {string} Şifrelenmiş karakter
+         */
+        function caesarEncrypt(char, key) {
+            const upperChar = char.toUpperCase();
+            const index = turkishAlphabet.indexOf(upperChar);
+            if (index === -1) {
+                return char; // Türkçe olmayan veya harf olmayan karakterleri koru
+            }
+            
+            // Sezar şifreleme formülü: (index + key) mod 29
+            const newIndex = (index + key) % totalSlices;
+            // Negatif sayılar için düzeltme (Örn: key -1 ise)
+            const correctedIndex = (newIndex + totalSlices) % totalSlices;
+            
+            // Büyük/küçük harf duyarlılığını koru
+            const cipheredChar = turkishAlphabet[correctedIndex];
+            if (char === upperChar) {
+                return cipheredChar;
+            } else {
+                return cipheredChar.toLowerCase();
+            }
+        }
+
+
+        // Çarkları Oluşturma Fonksiyonu
+        function createWheel(element, letterRadialDistance) {
+            turkishAlphabet.forEach((letter, index) => {
+                const span = document.createElement('div');
+                span.className = 'letter';
+                span.innerText = letter;
+                
+                // Harfi dilimin ortasına hizalamak için yarım dilim açısı eklenir
+                const rotateAngle = index * anglePerSlice + (anglePerSlice / 2);
+                
+                // 1. Dış rotasyon: Harfi doğru dilime taşır.
+                // 2. Radial öteleme: Harfi merkezden dışarı iter. (Negatif y, yukarı iter).
+                // 3. İç rotasyon: Harfi dik tutar.
+                span.style.transform = `
+                    rotate(${rotateAngle}deg)
+                    translateY(-${letterRadialDistance}px) 
+                    rotate(${-rotateAngle}deg)
+                `;
+                
+                element.appendChild(span);
+            });
+        }
+
+        // Çarkları Çiz
+        const outerRadialDistance = 175; // Dış çember kenarına yakın
+        const innerRadialDistance = 120; // İç çember kenarına yakın
+        
+        createWheel(outerCircle, outerRadialDistance);
+        createWheel(innerCircle, innerRadialDistance);
+
+        // Anahtar Değiştirme (Döndürme)
+        function changeKey(direction) {
+            currentRotation += direction;
+            
+            // 0-28 arası mod alma (Negatif sayılar için düzeltme)
+            let displayKey = currentRotation % totalSlices;
+            if (displayKey < 0) displayKey += totalSlices;
+
+            updateWheelUI(displayKey);
+        }
+
+        function resetWheel() {
+            currentRotation = 0;
+            updateWheelUI(0);
+        }
+
+        function updateWheelUI(key) { 
+            // Anahtar değerini göster
+            keyValueDisplay.innerText = key;
+
+            // İç çarkı döndür
+            // Anahtar pozitifse (sağa çevir), çark Sola (Negatif açı) döner.
+            const rotationDegree = -key * anglePerSlice;
+            innerCircle.style.transform = `rotate(${rotationDegree}deg)`;
+
+            // Örnek Harfi Güncelle (Dış 'A'nın karşılığı)
+            const matchedIndex = (0 + key) % totalSlices;
+            const matchedLetter = turkishAlphabet[matchedIndex];
+            
+            matchExample.innerText = matchedLetter;
+            matchExample.style.color = "var(--primary-color)";
+            matchExample.style.fontWeight = "bold";
+        }
+
+        // Başlangıç durumu
+        updateWheelUI(0);
+
+        // --- PDF OLUŞTURMA İŞLEVİ ---
+        async function generatePDF() {
+            const input = document.body;
+            
+            originalLlmOutputText = llmOutput.innerText; 
+            llmOutput.innerHTML = `<div class="loading-text">PDF Oluşturuluyor... Lütfen bekleyin.</div>`;
+
+            try {
+                const canvas = await html2canvas(input, {
+                    scale: 2, 
+                    useCORS: true, 
+                    windowWidth: document.body.scrollWidth,
+                    windowHeight: document.body.scrollHeight
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                
+                const pdf = new jsPDF('p', 'mm', 'a4'); 
+                
+                const imgProps= pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                
+                pdf.save("Sezar_Sifreleme_Carki_Egitim.pdf");
+
+                llmOutput.innerHTML = `PDF dosyası başarıyla indirildi!`;
+                setTimeout(() => {
+                    llmOutput.innerText = originalLlmOutputText;
+                }, 5000);
+
+            } catch (error) {
+                console.error("PDF oluşturma hatası:", error);
+                llmOutput.innerHTML = `Hata: PDF oluşturulamadı. Konsolu kontrol edin.`;
+                setTimeout(() => {
+                    llmOutput.innerText = originalLlmOutputText;
+                }, 5000);
+            }
+        }
+
+
+        // --- GEMINI API ENTEGRASYONLARI ---
+
+        /**
+         * Genel amaçlı API çağrı fonksiyonu (Hata yönetimi ve geri deneme dahil)
+         */
+        async function callGeminiApi(payload) {
+            let lastError = null;
+            for (let i = 0; i < 3; i++) { // 3 deneme
+                try {
+                    const response = await fetch(`${API_URL_BASE}?key=${API_KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    
+                    if (text) {
+                        return text;
+                    } else {
+                        throw new Error("API yanıtından geçerli metin alınamadı.");
+                    }
+                } catch (error) {
+                    lastError = error;
+                    if (i < 2) { // Son deneme değilse bekle ve tekrar dene (exponential backoff)
+                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+                    }
+                }
+            }
+            console.error("Gemini API çağrısı başarısız oldu:", lastError);
+            return `Hata: Mesaj analizi yapılamadı. (${lastError.message})`;
+        }
+
+
+        /**
+         * ✨ Rastgele Şifre Oluşturucu
+         */
+        async function generateCipher() {
+            const plainText = document.getElementById('plainTextInput').value.trim().toUpperCase().replace(/[^A-ZÇĞIİÖŞÜ]/g, ''); 
+            
+            if (!plainText) {
+                llmOutput.innerText = "Lütfen şifrelenecek bir kelime girin.";
+                return;
+            }
+
+            // Rastgele bir anahtar seç (1 ile 28 arası)
+            const randomKey = Math.floor(Math.random() * (totalSlices - 1)) + 1;
+            
+            // Kendi JS fonksiyonumuzla şifreleme yapılıyor.
+            const cipherText = Array.from(plainText).map(char => caesarEncrypt(char, randomKey)).join('');
+
+            const systemPrompt = `Bir kriptoloji uzmanı gibi davran. Kullanıcıya verilen kelimenin Sezar şifresiyle şifrelendiğini onaylayarak, hangi anahtarın kullanıldığını ve şifrelenmiş kelimeyi kısa ve ilgi çekici bir şekilde açıkla. Sadece Türkçe harfleri kullan.`;
+            const userQuery = `Orijinal kelime: '${plainText}', Anahtar: ${randomKey}, Şifreli kelime: '${cipherText}'. Bu şifreleme bilgisini öğrencilere sun.`;
+
+            llmOutput.innerHTML = `<div class="loading-text">Şifre oluşturuluyor ve onaylanıyor...</div>`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+            
+            const analysisResult = await callGeminiApi(payload);
+
+            const output = `
+                --- Şifreleme Görevi Tamamlandı ---
+                Orijinal Kelime: ${plainText}
+                Kullanılan Anahtar: ${randomKey}
+                Şifreli Kelime: ${cipherText}
+                
+                Gemini'nin Notu:
+                ${analysisResult}
+            `;
+            llmOutput.innerText = output;
+        }
+
+        /**
+         * ✨ Kırıcı Bot (Kriptanaliz Yardımı)
+         */
+        async function analyzeCipher() {
+            const cipherText = document.getElementById('cipherTextInput').value.trim().toUpperCase().replace(/[^A-ZÇĞIİÖŞÜ]/g, ''); 
+
+            if (!cipherText || cipherText.length < 5) {
+                llmOutput.innerText = "Lütfen en az 5 harften oluşan şifreli bir metin girin.";
+                return;
+            }
+
+            const systemPrompt = `Sen bir Kriptanaliz Uzmanısın. Sana verilen Sezar şifresi ile şifrelenmiş Türkçe metni analiz et. Metindeki olası en yaygın harfleri (Türkçede en yaygın E, A, N, İ, L harfleridir) ve bu harflerin kayma miktarını (anahtarını) tahmin ederek, şifrenin hangi kelime olabileceğine dair 3 farklı mantıklı tahmin üret. Her tahmini kısa bir açıklama ile sun. Yanıtını maddeler halinde (Örn: 1. Tahmin: ...) ver. Sadece Türkçe harfleri kullan.`;
+            const userQuery = `Şifreli metin: '${cipherText}'. Bunun Sezar şifresiyle şifrelenmiş bir Türkçe kelime olduğunu varsayarak, olası anahtarları ve çözümleri tahmin et.`;
+
+            llmOutput.innerHTML = `<div class="loading-text">Şifre analiz ediliyor... (Bu biraz zaman alabilir!)`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+            
+            const analysisResult = await callGeminiApi(payload);
+
+            const output = `
+                --- Kriptanaliz Raporu ---
+                Şifreli Metin: ${cipherText}
+                
+                Kırıcı Bot'un Analizi:
+                ${analysisResult}
+            `;
+            llmOutput.innerText = output;
+        }
+
+        window.onload = function() {
+            // Başlangıçta çarkı güncelleyerek harflerin doğru yerleştiğinden emin ol
+            updateWheelUI(0);
+        };
+    </script>
+</body>
+</html>
